@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  postgres:
+    container_name: postgres
+    image: ${POSTGRES_DEFAULT_IMAGE}
+    hostname: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_DEFAULT_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_DEFAULT_PASSWORD:-changeme}
+      PGDATA: /data/postgres
+    volumes:
+       - postgres:/data/postgres
+    ports:
+      - "${POSTGRES_DEFAULT_DOCKER_PORT}:${POSTGRES_DEFAULT_LOCAL_PORT}"
+    networks:
+      - postgres
+    restart: unless-stopped
+
+  pgadmin:
+    container_name: pgadmin
+    image: ${PGADMIN_DEFAULT_IMAGE}
+    hostname: pgadmin
+    depends_on:
+      - postgres
+    ports:
+      - "${PGADMIN_DEFAULT_DOCKER_PORT}:${PGADMIN_DEFAULT_LOCAL_PORT}"
+    networks:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin@pgadmin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-changeme}
+    restart: unless-stopped
+
+  dbatools:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dbatools
+    container_name: dbatools
+    hostname: dbatools
+    volumes:
+       - ../resources/share:/mnt/share
+    depends_on:
+      - postgres
+    networks:
+      - postgres
+
+volumes:
+    postgres:
+
+networks:
+  postgres:
+    driver: bridge
